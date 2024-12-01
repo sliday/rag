@@ -2,6 +2,28 @@
 
 A Retrieval-Augmented Generation (RAG) system that combines LlamaIndex, BERTopic, GPT-4o-mini, and Claude 3.5+ for intelligent document analysis and question answering, with support for both text and images.
 
+![CleanShot 2024-12-01 at 18 40 41@2x](https://github.com/user-attachments/assets/5cb64230-d00a-42bf-a3fb-150a68c832dd)
+
+Extra questions – "what a human would've asked about this page?" – are getting generated:
+![CleanShot 2024-12-01 at 18 44 02@2x](https://github.com/user-attachments/assets/63831a7b-4ccf-490f-a31f-b9e49fa00cb9)
+
+All vectorised and topics defined by BERTopic.
+
+![CleanShot 2024-12-01 at 18 46 05@2x](https://github.com/user-attachments/assets/cb1fa5b7-84d7-4a1e-b4d0-73b266a639aa)
+
+Let's ask some questions:
+![CleanShot 2024-12-01 at 18 47 04@2x](https://github.com/user-attachments/assets/0a50eb1b-193c-4501-8e5e-9221e939287f)
+![CleanShot 2024-12-01 at 18 47 30@2x](https://github.com/user-attachments/assets/80ab2bb9-9125-4058-8205-091d549bd09c)
+
+Let's get specific:
+![CleanShot 2024-12-01 at 18 48 26@2x](https://github.com/user-attachments/assets/57de23de-cfcf-4262-b63b-8a964fbecb0a)
+![CleanShot 2024-12-01 at 18 48 49@2x](https://github.com/user-attachments/assets/0bab18c1-9ca2-4c6a-b338-d10455b3e643)
+
+![CleanShot 2024-12-01 at 18 50 23@2x](https://github.com/user-attachments/assets/eaa2a7e5-e403-4d3a-9d8b-0bc22f4e3f87)
+![CleanShot 2024-12-01 at 18 50 44@2x](https://github.com/user-attachments/assets/1145ea45-f51f-4bba-beb0-07c0cf812f0c)
+
+Note: All data presented is mock data, and any similarities to actual information or events are purely coincidental.
+
 ## Overview
 
 This project implements an advanced RAG system that:
