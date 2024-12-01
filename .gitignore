@@ -1,0 +1,36 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!rag_agent.py
+!README.md
+!requirements.txt
+
+# Even if they are in subdirectories
+!*/
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore virtual environment
+venv/
+env/
+.env
+
+# Ignore output and data directories
+input/
+out/
+vector_store/
+
+# Ignore IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore OS specific files
+.DS_Store
+Thumbs.db 
