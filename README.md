@@ -19,9 +19,6 @@ Let's get specific:
 ![CleanShot 2024-12-01 at 18 48 26@2x](https://github.com/user-attachments/assets/57de23de-cfcf-4262-b63b-8a964fbecb0a)
 ![CleanShot 2024-12-01 at 18 48 49@2x](https://github.com/user-attachments/assets/0bab18c1-9ca2-4c6a-b338-d10455b3e643)
 
-![CleanShot 2024-12-01 at 18 50 23@2x](https://github.com/user-attachments/assets/eaa2a7e5-e403-4d3a-9d8b-0bc22f4e3f87)
-![CleanShot 2024-12-01 at 18 50 44@2x](https://github.com/user-attachments/assets/1145ea45-f51f-4bba-beb0-07c0cf812f0c)
-
 Note: All data presented is mock data, and any similarities to actual information or events are purely coincidental.
 
 ## Overview
@@ -178,11 +175,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - OpenAI for embeddings
 - Anthropic for Claude 3.5 LLM
 
-## How it works
+--- 
 
-# Building a Smart Document Helper: How RAG Works 🤖
+# How it works: Building a Smart Document Helper: How RAG Works 🤖
 
-Hey there! Let's explore how this awesome program works. It's like having a super-smart assistant that can read your documents AND look at pictures!
+It's like having a super-smart assistant that can read your documents and look at pictures! Explanation in plain terms, no tech jargon below.
 
 ## 🎯 What Can It Do?
 
