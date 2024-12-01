@@ -1,4 +1,14 @@
+# Thread control settings must be at the very top, before any imports
 import os
+os.environ["KMP_WARNINGS"] = "0"  # Suppress OpenMP warnings
+os.environ["OMP_DISPLAY_ENV"] = "FALSE"  # Do not display OpenMP environment variables
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OMP_MAX_ACTIVE_LEVELS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"  # Add NumExpr thread control
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"  # Add VecLib thread control
+
 from typing import List, Optional, Generator
 from dotenv import load_dotenv
 from pathlib import Path
@@ -7,7 +17,10 @@ import shutil
 from PIL import Image
 from io import BytesIO
 import base64
+from contextlib import contextmanager
+from threadpoolctl import threadpool_limits
 
+# LlamaIndex imports
 from llama_index.core import (
     VectorStoreIndex,
     StorageContext,
@@ -22,12 +35,24 @@ from llama_index.core.node_parser import SimpleNodeParser
 from llama_index.multi_modal_llms.anthropic import AnthropicMultiModal
 from llama_index.core.schema import ImageNode
 
+# Topic modeling and ML imports
 from bertopic import BERTopic
 from sklearn.feature_extraction.text import CountVectorizer
 from umap import UMAP
+from hdbscan import HDBSCAN
+
+# Other imports
 from ell import init, simple
 from ell import Message as EllMessage
 from openai import OpenAI
+
+@contextmanager
+def controlled_threading():
+    """Context manager for controlling thread usage in numerical computations"""
+    with threadpool_limits(limits=1, user_api='blas'):
+        with threadpool_limits(limits=1, user_api='openmp'):
+            with threadpool_limits(limits=1, user_api='scipy'):
+                yield
 
 # Load environment variables
 load_dotenv()
@@ -366,55 +391,61 @@ class RAGAgent:
             print("⚠️ Warning: Index not initialized yet")
             return
 
-        # Get document count for dynamic configuration
         doc_count = len(list(self.index.docstore.docs.values()))
         print(f"📊 Configuring BERTopic for {doc_count} documents...")
 
-        # For very small document sets, use minimal configuration
-        if doc_count < 5:
-            print("⚠️ Small document set detected, using minimal topic configuration...")
-            from sklearn.cluster import KMeans
-            
-            self.topic_model = BERTopic(
-                embedding_model=self.embed_model.get_text_embedding,
-                min_topic_size=1,
-                n_gram_range=(1, 1),
-                calculate_probabilities=True,
-                verbose=False,
-                hdbscan_model=KMeans(n_clusters=max(2, doc_count // 2))
-            )
-        else:
-            # For larger document sets, use standard configuration
-            n_neighbors = max(2, min(doc_count - 1, 15))
-            n_components = max(2, min(doc_count - 1, 5))
-            
-            from hdbscan import HDBSCAN
-            
-            self.topic_model = BERTopic(
-                embedding_model=self.embed_model.get_text_embedding,
-                umap_model=UMAP(
+        with controlled_threading():
+            if doc_count < 5:
+                print("⚠️ Small document set detected, using minimal topic configuration...")
+                from sklearn.cluster import KMeans
+                
+                self.topic_model = BERTopic(
+                    embedding_model=self.embed_model.get_text_embedding,
+                    min_topic_size=1,
+                    n_gram_range=(1, 1),
+                    calculate_probabilities=True,
+                    verbose=False,
+                    hdbscan_model=KMeans(n_clusters=max(2, doc_count // 2), n_jobs=1)
+                )
+            else:
+                n_neighbors = max(2, min(doc_count - 1, 15))
+                n_components = max(2, min(doc_count - 1, 5))
+                
+                from hdbscan import HDBSCAN
+                
+                umap_model = UMAP(
                     n_neighbors=n_neighbors,
                     n_components=n_components,
                     min_dist=0.0,
                     metric='cosine',
-                    random_state=42
-                ),
-                vectorizer_model=CountVectorizer(
-                    ngram_range=(1, 1),
-                    stop_words="english",
-                    min_df=1
-                ),
-                hdbscan_model=HDBSCAN(
+                    random_state=42,
+                    n_jobs=1,
+                    low_memory=True
+                )
+
+                hdbscan_model = HDBSCAN(
                     min_cluster_size=2,
                     min_samples=1,
                     cluster_selection_method='eom',
-                    prediction_data=True
-                ),
-                min_topic_size=1,
-                nr_topics="auto",
-                calculate_probabilities=True,
-                verbose=False
-            )
+                    prediction_data=True,
+                    core_dist_n_jobs=1,
+                    algorithm='best'
+                )
+
+                self.topic_model = BERTopic(
+                    embedding_model=self.embed_model.get_text_embedding,
+                    umap_model=umap_model,
+                    vectorizer_model=CountVectorizer(
+                        ngram_range=(1, 1),
+                        stop_words="english",
+                        min_df=1
+                    ),
+                    hdbscan_model=hdbscan_model,
+                    min_topic_size=1,
+                    nr_topics="auto",
+                    calculate_probabilities=True,
+                    verbose=False
+                )
 
     def _process_documents_with_bertopic(self, documents: List[Document]) -> List[Document]:
         """Process documents using BERTopic and enrich metadata"""
@@ -426,10 +457,12 @@ class RAGAgent:
         self._initialize_bertopic()
 
         print("📊 Fitting BERTopic model to documents...")
-        topics, probabilities = self.topic_model.fit_transform(docs_text)
+        with controlled_threading():
+            topics, probabilities = self.topic_model.fit_transform(docs_text)
+            
+            # Get topic info
+            topic_info = self.topic_model.get_topic_info()
         
-        # Get topic info
-        topic_info = self.topic_model.get_topic_info()
         print(f"\n🏷️  Discovered {len(topic_info)} topics in documents")
 
         # Enrich documents with topic metadata
@@ -519,7 +552,8 @@ class RAGAgent:
 
     def _infer_query_topic(self, query: str) -> int:
         """Infer topic of the query using BERTopic"""
-        topics, _ = self.topic_model.transform([query])
+        with controlled_threading():
+            topics, _ = self.topic_model.transform([query])
         return topics[0]
 
 def chat_loop() -> None:
